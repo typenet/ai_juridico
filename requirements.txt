@@ -1,0 +1,8 @@
+openai
+streamlit
+tiktoken
+python-dotenv
+supabase
+docling
+requests
+numpy
