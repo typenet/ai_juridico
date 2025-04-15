@@ -15,7 +15,7 @@ supabase = create_client(
 
 # Configuração do Deepseek
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/embeddings"
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/embeddings"  # ✅ URL correta
 
 def get_embedding(text):
     headers = {
@@ -25,7 +25,7 @@ def get_embedding(text):
     
     data = {
         "input": text,
-        "model": "text-embedding-ada-002"
+        "model": "deepseek-embedding-001"  # ✅ Modelo correto do Deepseek
     }
     
     try:
@@ -36,6 +36,7 @@ def get_embedding(text):
         print(f"❌ Erro na API do Deepseek: {str(e)}")
         if hasattr(e, 'response') and e.response is not None:
             print(f"Status code: {e.response.status_code}")
+            print(f"Resposta: {e.response.text}")
         return None
 
 def chunk_text(text, max_tokens=500):
@@ -57,4 +58,4 @@ def chunk_text(text, max_tokens=500):
     if current_chunk:
         chunks.append(encoding.decode(current_chunk))
     
-    return chunks 
+    return chunks
