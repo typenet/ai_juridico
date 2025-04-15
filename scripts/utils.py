@@ -1,42 +1,24 @@
 import os
 from dotenv import load_dotenv
-from supabase import create_client
 import tiktoken
-import requests
-import json
+import google.generativeai as genai
 
 load_dotenv()
 
-# Configuração do Supabase
-supabase = create_client(
-    os.getenv("SUPABASE_URL"),
-    os.getenv("SUPABASE_KEY")
-)
-
-# Configuração do Deepseek
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/embeddings"  # ✅ URL correta
+# Configuração do Gemini
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def get_embedding(text):
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    
-    data = {
-        "input": text,
-        "model": "deepseek-embedding-001"  # ✅ Modelo correto do Deepseek
-    }
-    
     try:
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()["data"][0]["embedding"]
-    except requests.exceptions.RequestException as e:
-        print(f"❌ Erro na API do Deepseek: {str(e)}")
-        if hasattr(e, 'response') and e.response is not None:
-            print(f"Status code: {e.response.status_code}")
-            print(f"Resposta: {e.response.text}")
+        # Usando o modelo correto do Gemini para embeddings
+        result = genai.embed_content(
+            model="models/embedding-001",  # <- Correção aqui
+            content=text,
+            task_type="retrieval_document"
+        )
+        return result['embedding']
+    except Exception as e:
+        print(f"❌ Erro na API do Gemini: {str(e)}")
         return None
 
 def chunk_text(text, max_tokens=500):

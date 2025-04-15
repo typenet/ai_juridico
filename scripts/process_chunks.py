@@ -82,16 +82,32 @@ def save_to_supabase(data):
         "Prefer": "return=minimal"
     }
     
+    # Garantindo que todos os campos necessários estejam presentes
+    required_fields = {
+        "id": data.get("id", str(uuid.uuid4())),
+        "cpf": data.get("cpf", ""),
+        "processo": data.get("processo", ""),
+        "data": data.get("data", ""),
+        "tipo": data.get("tipo", ""),
+        "titulo": data.get("titulo", ""),
+        "chunk_index": data.get("chunk_index", 0),
+        "text": data.get("text", ""),
+        "embedding": data.get("embedding", []),
+        "source": data.get("source", "")
+    }
+    
     try:
         response = requests.post(
             f"{SUPABASE_URL}/rest/v1/document_chunks",
             headers=headers,
-            json=data
+            json=required_fields
         )
         response.raise_for_status()
         return True
     except Exception as e:
         print(f"❌ Erro ao salvar no Supabase: {str(e)}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"Detalhes do erro: {e.response.text}")
         return False
 
 def process_json(doc_json, source):
