@@ -1,43 +1,59 @@
-import os
-from dotenv import load_dotenv
-import tiktoken
 import google.generativeai as genai
+import numpy as np
+from dotenv import load_dotenv
+import os
 
+# Carregar variáveis de ambiente
 load_dotenv()
 
-# Configuração do Gemini
+# Configuração da chave da API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-def get_embedding(text):
+# Função para obter o embedding de um texto
+def get_embedding(text: str):
     try:
-        # Usando o modelo correto do Gemini para embeddings
-        result = genai.embed_content(
-            model="models/embedding-001",  # <- Correção aqui
-            content=text,
-            task_type="retrieval_document"
-        )
-        return result['embedding']
+        # Usando a função adequada para gerar embeddings
+        response = genai.embed(text=text)  # Alterando para a função correta de embeddings
+        embedding = response['embedding']  # Assumindo que o retorno tem a chave 'embedding'
+        return embedding
     except Exception as e:
-        print(f"❌ Erro na API do Gemini: {str(e)}")
+        print(f"❌ Erro ao gerar embedding: {e}")
         return None
 
-def chunk_text(text, max_tokens=500):
-    encoding = tiktoken.get_encoding("cl100k_base")
-    tokens = encoding.encode(text)
+# Função para dividir o texto em chunks com base no número máximo de tokens
+def chunk_text(text: str, max_tokens: int):
+    """Divide o texto em chunks menores para se ajustar ao limite de tokens"""
+    words = text.split()
     chunks = []
     current_chunk = []
-    current_length = 0
-    
-    for token in tokens:
-        current_chunk.append(token)
-        current_length += 1
-        
-        if current_length >= max_tokens:
-            chunks.append(encoding.decode(current_chunk))
-            current_chunk = []
-            current_length = 0
-    
+
+    for word in words:
+        if len(" ".join(current_chunk + [word])) > max_tokens:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [word]
+        else:
+            current_chunk.append(word)
+
     if current_chunk:
-        chunks.append(encoding.decode(current_chunk))
-    
+        chunks.append(" ".join(current_chunk))
+
     return chunks
+
+# Função para gerar resumo a partir de chunks
+def generate_summary_from_chunks(chunks):
+    """
+    Gera um resumo a partir de uma lista de chunks.
+    Utiliza a API Gemini para gerar o resumo.
+    """
+    try:
+        full_text = " ".join([chunk['chunk_content'] for chunk in chunks])
+        response = genai.generate_text(  # Mudança para usar a função correta para geração de texto
+            model="models/gemini-1.5-flash-latest",
+            prompt=full_text,
+            temperature=0.7,
+            max_output_tokens=300  # Ajuste de acordo com a necessidade
+        )
+        return response['text']
+    except Exception as e:
+        print(f"❌ Erro ao gerar resumo: {e}")
+        return "Erro ao gerar resumo."
